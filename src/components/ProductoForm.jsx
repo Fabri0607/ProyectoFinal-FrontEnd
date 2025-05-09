@@ -1,9 +1,28 @@
+import { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
 function ProductoForm({ producto, onClose, onSave }) {
+  const [categorias, setCategorias] = useState([]);
+  const currentDate = new Date().toISOString();
+
+  // Cargar parámetros y filtrar por tipo CATEGORIA_PRODUCTO
+  useEffect(() => {
+    api.get('/Parametro')
+      .then(res => {
+        const filteredCategorias = res.data.filter(
+          param => param.tipo === 'CATEGORIA_PRODUCTO' && param.activo
+        );
+        setCategorias(filteredCategorias);
+      })
+      .catch(() => {
+        toast.error('Error al cargar categorías');
+        setCategorias([]);
+      });
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white p-6 rounded-lg w-full max-w-md">
@@ -20,8 +39,10 @@ function ProductoForm({ producto, onClose, onSave }) {
             precioVenta: producto?.precioVenta || 0,
             stock: producto?.stock || 0,
             stockMinimo: producto?.stockMinimo || 0,
-            categoriaId: producto?.categoriaId || 1, // Asumimos un valor por defecto
+            categoriaId: producto?.categoriaId || '',
             activo: producto?.activo ?? true,
+            fechaCreacion: producto?.fechaCreacion ? new Date(producto.fechaCreacion).toISOString() : currentDate,
+            fechaModificacion: producto?.fechaModificacion ? new Date(producto.fechaModificacion).toISOString() : null,
           }}
           validationSchema={Yup.object({
             nombre: Yup.string().required('Requerido'),
@@ -32,15 +53,31 @@ function ProductoForm({ producto, onClose, onSave }) {
             stock: Yup.number().min(0, 'Debe ser mayor o igual a 0').required('Requerido'),
             stockMinimo: Yup.number().min(0, 'Debe ser mayor o igual a 0').required('Requerido'),
             categoriaId: Yup.number().min(1, 'Seleccione una categoría').required('Requerido'),
+            fechaCreacion: Yup.date().required('Requerido').min(new Date('1753-01-01'), 'Fecha inválida'),
+            fechaModificacion: Yup.date().nullable().min(new Date('1753-01-01'), 'Fecha inválida'),
           })}
           onSubmit={(values, { setSubmitting }) => {
+            const payload = {
+              ...values,
+              precioCompra: parseFloat(values.precioCompra),
+              precioVenta: parseFloat(values.precioVenta),
+              stock: parseInt(values.stock),
+              stockMinimo: parseInt(values.stockMinimo),
+              categoriaId: parseInt(values.categoriaId),
+              fechaCreacion: values.fechaCreacion,
+              fechaModificacion: values.fechaModificacion || null,
+            };
+
             const method = producto ? 'put' : 'post';
-            api[method]('/Producto', values)
+            api[method]('/Producto', payload)
               .then(res => {
                 toast.success(producto ? 'Producto actualizado' : 'Producto creado');
                 onSave(res.data);
               })
-              .catch(() => { /* Error manejado por interceptor */ })
+              .catch(err => {
+                const errorMessage = err.response?.data?.message || 'Error al guardar producto';
+                toast.error(errorMessage);
+              })
               .finally(() => setSubmitting(false));
           }}
         >
@@ -82,8 +119,15 @@ function ProductoForm({ producto, onClose, onSave }) {
                 <ErrorMessage name="stockMinimo" component="div" className="text-red-500 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Categoría ID</label>
-                <Field name="categoriaId" type="number" className="w-full p-2 border rounded" />
+                <label className="block text-sm font-medium mb-1">Categoría</label>
+                <Field as="select" name="categoriaId" className="w-full p-2 border rounded">
+                  <option value="">Seleccione una categoría</option>
+                  {categorias.map(categoria => (
+                    <option key={categoria.parametroId} value={categoria.parametroId}>
+                      {categoria.descripcion} ({categoria.codigo})
+                    </option>
+                  ))}
+                </Field>
                 <ErrorMessage name="categoriaId" component="div" className="text-red-500 text-sm" />
               </div>
               <div>
@@ -100,8 +144,8 @@ function ProductoForm({ producto, onClose, onSave }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-primary text-white rounded"
+                  disabled={isSubmitting || categorias.length === 0}
+                  className="px-4 py-2 bg-primary text-white rounded disabled:bg-gray-400"
                 >
                   Guardar
                 </button>
