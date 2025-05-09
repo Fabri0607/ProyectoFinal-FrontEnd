@@ -32,10 +32,21 @@ function Productos() {
         .then(() => {
           setProductos(productos.filter(p => p.productoId !== id));
           toast.success('Producto eliminado');
-          // Opcional: Recargar la lista para sincronizar con el backend
+          // Recargar la lista para sincronizar con el backend
           fetchProductos();
         })
-        .catch(() => toast.error('Error al eliminar producto'));
+        .catch(err => {
+          console.log('Error en eliminación:', err.response); // Depuración
+          // Extraer el mensaje de error del backend
+          let errorMessage = 'Error al eliminar producto';
+          if (err.response?.data) {
+            // Manejar casos donde data es un objeto con message o un string
+            errorMessage = typeof err.response.data === 'string'
+              ? err.response.data
+              : err.response.data.message || errorMessage;
+          }
+          toast.error(errorMessage);
+        });
     }
   };
 
