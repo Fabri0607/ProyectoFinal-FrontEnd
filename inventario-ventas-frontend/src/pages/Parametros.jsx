@@ -8,27 +8,33 @@ function Parametros() {
   useEffect(() => {
     api.get('/Parametro')
       .then(res => setParametros(res.data))
-      .catch(err => toast.error('Error al cargar parámetros'));
+      .catch(() => toast.error('Error al cargar parámetros'));
   }, []);
 
   return (
     <div className="ml-64 p-8">
       <h2 className="text-3xl font-bold mb-6">Parámetros</h2>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <table className="w-full">
+      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
+        <table className="w-full min-w-max">
           <thead>
             <tr className="bg-gray-100">
               <th className="p-2 text-left">ID</th>
-              <th className="p-2 text-left">Nombre</th>
+              <th className="p-2 text-left">Código</th>
+              <th className="p-2 text-left">Descripción</th>
+              <th className="p-2 text-left">Tipo</th>
               <th className="p-2 text-left">Valor</th>
+              <th className="p-2 text-left">Activo</th>
             </tr>
           </thead>
           <tbody>
             {parametros.map(param => (
               <tr key={param.parametroId}>
                 <td className="p-2">{param.parametroId}</td>
-                <td className="p-2">{param.nombre}</td>
-                <td className="p-2">{param.valor}</td>
+                <td className="p-2">{param.codigo}</td>
+                <td className="p-2">{param.descripcion}</td>
+                <td className="p-2">{param.tipo}</td>
+                <td className="p-2">{param.valor || '-'}</td>
+                <td className="p-2">{param.activo ? 'Sí' : 'No'}</td>
               </tr>
             ))}
           </tbody>

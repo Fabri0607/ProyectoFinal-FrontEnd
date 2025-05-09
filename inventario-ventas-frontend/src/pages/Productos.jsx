@@ -12,7 +12,7 @@ function Productos() {
   useEffect(() => {
     api.get('/Producto')
       .then(res => setProductos(res.data))
-      .catch(err => toast.error('Error al cargar productos'));
+      .catch(() => toast.error('Error al cargar productos'));
   }, []);
 
   const handleDelete = (id) => {
@@ -22,7 +22,7 @@ function Productos() {
           setProductos(productos.filter(p => p.productoId !== id));
           toast.success('Producto eliminado');
         })
-        .catch(err => toast.error('Error al eliminar producto'));
+        .catch(() => toast.error('Error al eliminar producto'));
     }
   };
 
@@ -40,14 +40,17 @@ function Productos() {
           <FaPlus /> Nuevo Producto
         </button>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <table className="w-full">
+      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
+        <table className="w-full min-w-max">
           <thead>
             <tr className="bg-gray-100">
               <th className="p-2 text-left">ID</th>
+              <th className="p-2 text-left">Código</th>
               <th className="p-2 text-left">Nombre</th>
-              <th className="p-2 text-left">Precio</th>
+              <th className="p-2 text-left">Precio Venta</th>
               <th className="p-2 text-left">Stock</th>
+              <th className="p-2 text-left">Stock Mínimo</th>
+              <th className="p-2 text-left">Activo</th>
               <th className="p-2 text-left">Acciones</th>
             </tr>
           </thead>
@@ -55,9 +58,12 @@ function Productos() {
             {productos.map(producto => (
               <tr key={producto.productoId}>
                 <td className="p-2">{producto.productoId}</td>
+                <td className="p-2">{producto.codigo}</td>
                 <td className="p-2">{producto.nombre}</td>
-                <td className="p-2">${producto.precio}</td>
+                <td className="p-2">${producto.precioVenta.toFixed(2)}</td>
                 <td className="p-2">{producto.stock}</td>
+                <td className="p-2">{producto.stockMinimo}</td>
+                <td className="p-2">{producto.activo ? 'Sí' : 'No'}</td>
                 <td className="p-2">
                   <button
                     onClick={() => {

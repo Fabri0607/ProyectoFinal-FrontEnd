@@ -10,29 +10,31 @@ function VentaDetalle() {
   useEffect(() => {
     api.get(`/DetalleVenta/venta/${id}`)
       .then(res => setDetalles(res.data))
-      .catch(err => toast.error('Error al cargar detalles de venta'));
+      .catch(() => toast.error('Error al cargar detalles de venta'));
   }, [id]);
 
   return (
     <div className="ml-64 p-8">
       <h2 className="text-3xl font-bold mb-6">Detalles de Venta #{id}</h2>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <table className="w-full">
+      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
+        <table className="w-full min-w-max">
           <thead>
             <tr className="bg-gray-100">
               <th className="p-2 text-left">Producto</th>
               <th className="p-2 text-left">Cantidad</th>
               <th className="p-2 text-left">Precio Unitario</th>
+              <th className="p-2 text-left">Descuento</th>
               <th className="p-2 text-left">Subtotal</th>
             </tr>
           </thead>
           <tbody>
             {detalles.map(detalle => (
               <tr key={detalle.detalleVentaId}>
-                <td className="p-2">{detalle.productoNombre}</td>
+                <td className="p-2">{detalle.producto?.nombre || 'N/A'}</td>
                 <td className="p-2">{detalle.cantidad}</td>
-                <td className="p-2">${detalle.precioUnitario}</td>
-                <td className="p-2">${detalle.subtotal}</td>
+                <td className="p-2">${detalle.precioUnitario.toFixed(2)}</td>
+                <td className="p-2">${detalle.descuento.toFixed(2)}</td>
+                <td className="p-2">${detalle.subtotal.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>

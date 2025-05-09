@@ -8,7 +8,7 @@ function Home() {
   useEffect(() => {
     api.get('/Reporte/StockBajo')
       .then(res => setStockBajo(res.data))
-      .catch(err => toast.error('Error al cargar productos con stock bajo'));
+      .catch(() => toast.error('Error al cargar productos con stock bajo'));
   }, []);
 
   return (
@@ -19,17 +19,21 @@ function Home() {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100">
+              <th className="p-2 text-left">Código</th>
               <th className="p-2 text-left">Producto</th>
               <th className="p-2 text-left">Stock Actual</th>
               <th className="p-2 text-left">Stock Mínimo</th>
+              <th className="p-2 text-left">Diferencia</th>
             </tr>
           </thead>
           <tbody>
             {stockBajo.map(producto => (
               <tr key={producto.productoId}>
+                <td className="p-2">{producto.codigo}</td>
                 <td className="p-2">{producto.nombre}</td>
                 <td className="p-2">{producto.stockActual}</td>
                 <td className="p-2">{producto.stockMinimo}</td>
+                <td className="p-2">{producto.diferenciaBajo}</td>
               </tr>
             ))}
           </tbody>
