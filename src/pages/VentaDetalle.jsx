@@ -25,35 +25,57 @@ function VentaDetalle() {
           <FaArrowLeft /> Volver a Ventas
         </Link>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
-        <table className="w-full min-w-max">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-2 text-left">Producto</th>
-              <th className="p-2 text-left">Cantidad</th>
-              <th className="p-2 text-left">Precio Unitario</th>
-              <th className="p-2 text-left">Descuento</th>
-              <th className="p-2 text-left">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detalles.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="p-2 text-center">No hay detalles</td>
-              </tr>
-            ) : (
-              detalles.map(detalle => (
-                <tr key={detalle.detalleVentaId}>
-                  <td className="p-2">{detalle.producto?.nombre || 'N/A'}</td>
-                  <td className="p-2">{detalle.cantidad || '-'}</td>
-                  <td className="p-2">${detalle.precioUnitario?.toFixed(2) || '0.00'}</td>
-                  <td className="p-2">${detalle.descuento?.toFixed(2) || '0.00'}</td>
-                  <td className="p-2">${detalle.subtotal?.toFixed(2) || '0.00'}</td>
+      <div className="bg-white p-8 rounded-xl shadow border-l-4 border-gray-500">
+        <h3 className="text-xl font-semibold text-gray-800 mb-6">
+          Detalles de la Venta
+        </h3>
+        {detalles.length === 0 ? (
+          <p className="text-gray-600 text-center py-6 font-medium">
+            No hay detalles
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
+                  <th className="p-4 rounded-tl-lg min-w-[150px]">Producto</th>
+                  <th className="p-4 text-right min-w-[120px]">Cantidad</th>
+                  <th className="p-4 text-right min-w-[120px]">Precio Unitario</th>
+                  <th className="p-4 text-right min-w-[120px]">Descuento</th>
+                  <th className="p-4 text-right rounded-tr-lg min-w-[120px]">
+                    Subtotal
+                  </th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {detalles.map((detalle, index) => (
+                  <tr
+                    key={detalle.detalleVentaId}
+                    className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  >
+                    <td className="p-4 font-medium text-gray-800">
+                      {detalle.producto?.nombre || 'N/A'}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      {detalle.cantidad || '-'}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      ${detalle.precioUnitario?.toFixed(2) || '0.00'}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      ${detalle.descuento?.toFixed(2) || '0.00'}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      ${detalle.subtotal?.toFixed(2) || '0.00'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

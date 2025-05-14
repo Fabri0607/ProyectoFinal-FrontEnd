@@ -10,7 +10,6 @@ function Productos() {
   const [editProducto, setEditProducto] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Función para cargar productos desde la API
   const fetchProductos = useCallback(() => {
     setIsLoading(true);
     api.get('/Producto')
@@ -21,7 +20,6 @@ function Productos() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Cargar productos al montar el componente
   useEffect(() => {
     fetchProductos();
   }, [fetchProductos]);
@@ -32,18 +30,16 @@ function Productos() {
         .then(() => {
           setProductos(productos.filter(p => p.productoId !== id));
           toast.success('Producto eliminado');
-          // Recargar la lista para sincronizar con el backend
           fetchProductos();
         })
         .catch(err => {
-          console.log('Error en eliminación:', err.response); // Depuración
-          // Extraer el mensaje de error del backend
+          console.log('Error en eliminación:', err.response);
           let errorMessage = 'Error al eliminar producto';
           if (err.response?.data) {
-            // Manejar casos donde data es un objeto con message o un string
-            errorMessage = typeof err.response.data === 'string'
-              ? err.response.data
-              : err.response.data.message || errorMessage;
+            errorMessage =
+              typeof err.response.data === 'string'
+                ? err.response.data
+                : err.response.data.message || errorMessage;
           }
           toast.error(errorMessage);
         });
@@ -64,37 +60,59 @@ function Productos() {
           <FaPlus /> Nuevo Producto
         </button>
       </div>
-      <div className="bg-white p-6 rounded-lg shadow overflow-x-auto">
+      <div className="bg-white p-8 rounded-xl shadow border-l-4 border-gray-500">
+        <h3 className="text-xl font-semibold text-gray-800 mb-6">
+          Lista de Productos
+        </h3>
         {isLoading ? (
-          <div className="text-center py-4">Cargando productos...</div>
+          <p className="text-gray-600 text-center py-6 font-medium">
+            Cargando productos...
+          </p>
+        ) : productos.length === 0 ? (
+          <p className="text-gray-600 text-center py-6 font-medium">
+            No hay productos
+          </p>
         ) : (
-          <table className="w-full min-w-max">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 text-left">Código</th>
-                <th className="p-2 text-left">Nombre</th>
-                <th className="p-2 text-left">Precio Venta</th>
-                <th className="p-2 text-left">Stock</th>
-                <th className="p-2 text-left">Stock Mínimo</th>
-                <th className="p-2 text-left">Activo</th>
-                <th className="p-2 text-left">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productos.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="p-2 text-center">No hay productos</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
+                  <th className="p-4 rounded-tl-lg min-w-[100px]">Código</th>
+                  <th className="p-4 min-w-[150px]">Nombre</th>
+                  <th className="p-4 text-right min-w-[120px]">Precio Venta</th>
+                  <th className="p-4 text-right min-w-[120px]">Stock</th>
+                  <th className="p-4 text-right min-w-[120px]">Stock Mínimo</th>
+                  <th className="p-4 min-w-[100px]">Activo</th>
+                  <th className="p-4 rounded-tr-lg min-w-[120px]">Acciones</th>
                 </tr>
-              ) : (
-                productos.map(producto => (
-                  <tr key={producto.productoId}>
-                    <td className="p-2">{producto.codigo || '-'}</td>
-                    <td className="p-2">{producto.nombre || '-'}</td>
-                    <td className="p-2">${producto.precioVenta?.toFixed(2) || '0.00'}</td>
-                    <td className="p-2">{producto.stock ?? 0}</td>
-                    <td className="p-2">{producto.stockMinimo ?? 0}</td>
-                    <td className="p-2">{producto.activo ? 'Sí' : 'No'}</td>
-                    <td className="p-2">
+              </thead>
+              <tbody>
+                {productos.map((producto, index) => (
+                  <tr
+                    key={producto.productoId}
+                    className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  >
+                    <td className="p-4 font-medium text-gray-800">
+                      {producto.codigo || '-'}
+                    </td>
+                    <td className="p-4 font-medium text-gray-800">
+                      {producto.nombre || '-'}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      ${producto.precioVenta?.toFixed(2) || '0.00'}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      {producto.stock ?? 0}
+                    </td>
+                    <td className="p-4 text-right text-gray-800">
+                      {producto.stockMinimo ?? 0}
+                    </td>
+                    <td className="p-4 text-gray-800">
+                      {producto.activo ? 'Sí' : 'No'}
+                    </td>
+                    <td className="p-4">
                       <button
                         onClick={() => {
                           setEditProducto(producto);
@@ -112,10 +130,10 @@ function Productos() {
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
       {showModal && (
@@ -123,12 +141,14 @@ function Productos() {
           producto={editProducto}
           onClose={() => setShowModal(false)}
           onSave={(newProducto) => {
-            // Actualización local inmediata
-            setProductos(editProducto
-              ? productos.map(p => p.productoId === newProducto.productoId ? newProducto : p)
-              : [...productos, newProducto]);
+            setProductos(
+              editProducto
+                ? productos.map(p =>
+                    p.productoId === newProducto.productoId ? newProducto : p
+                  )
+                : [...productos, newProducto]
+            );
             setShowModal(false);
-            // Recargar la lista desde la API para sincronizar
             fetchProductos();
           }}
         />
