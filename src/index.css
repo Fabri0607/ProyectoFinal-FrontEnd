@@ -15,3 +15,32 @@ table {
 th, td {
   @apply border border-gray-200;
 }
+
+/* Ocultar cursor de texto globalmente */
+* {
+  cursor: default;
+  user-select: none;
+}
+
+/* Restaurar cursor en inputs y textareas */
+input:not([type="checkbox"], [type="radio"]),
+textarea {
+  cursor: text;
+  user-select: auto;
+}
+
+/* Asegurar cursor pointer en botones y elementos interactivos */
+button,
+[role="button"],
+a,
+select,
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+
+/* Opcional: Asegurar selección en inputs */
+input:not([type="checkbox"], [type="radio"]):focus,
+textarea:focus {
+  user-select: auto;
+}
