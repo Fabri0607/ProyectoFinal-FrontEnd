@@ -27,7 +27,6 @@ function Movimientos() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
-                  <th className="p-4 rounded-tl-lg min-w-[80px]">ID</th>
                   <th className="p-4 min-w-[150px]">Producto</th>
                   <th className="p-4 min-w-[150px]">Tipo Movimiento</th>
                   <th className="p-4 text-right min-w-[100px]">Cantidad</th>
@@ -43,7 +42,6 @@ function Movimientos() {
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     }`}
                   >
-                    <td className="p-4 text-right text-gray-800">{mov.movimientoId}</td>
                     <td className="p-4 font-medium text-gray-800">
                       {mov.productoNombre || 'N/A'}
                     </td>

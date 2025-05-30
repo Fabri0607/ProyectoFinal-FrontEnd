@@ -423,86 +423,82 @@ const AuthPages = ({ onLogin }) => {
 };
 
   const handleRegisterSubmit = async () => {
-    // Validación local antes de enviar
-    if (registerData.password !== registerData.confirmPassword) {
-      setRegisterError('Las contraseñas no coinciden');
-      return;
-    }
+  // Validación local antes de enviar
+  if (registerData.password !== registerData.confirmPassword) {
+    setRegisterError('Las contraseñas no coinciden');
+    return;
+  }
 
-    if (registerData.password.length < 6) {
-      setRegisterError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
+  if (registerData.password.length < 6) {
+    setRegisterError('La contraseña debe tener al menos 6 caracteres');
+    return;
+  }
 
-    if (!registerData.userName.trim()) {
-      setRegisterError('El nombre de usuario es requerido');
-      return;
-    }
+  if (!registerData.userName.trim()) {
+    setRegisterError('El nombre de usuario es requerido');
+    return;
+  }
 
-    if (!registerData.email.trim()) {
-      setRegisterError('El email es requerido');
-      return;
-    }
+  if (!registerData.email.trim()) {
+    setRegisterError('El email es requerido');
+    return;
+  }
 
-    setRegisterLoading(true);
-    setRegisterError('');
-    setRegisterSuccess(false);
+  setRegisterLoading(true);
+  setRegisterError('');
+  setRegisterSuccess(false);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/Auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userName: registerData.userName,
-          email: registerData.email,
-          password: registerData.password
-        }),
+  try {
+    const response = await fetch(`${API_BASE_URL}/Auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userName: registerData.userName,
+        email: registerData.email,
+        password: registerData.password,
+      }),
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      // Registro exitoso
+      setRegisterSuccess(true);
+      
+      // Limpiar formulario
+      setRegisterData({
+        userName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Registro exitoso
-        setRegisterSuccess(true);
-        console.log('Registro exitoso:', data);
-        
-        // Limpiar formulario
-        setRegisterData({
-          userName: '',
-          email: '',
-          password: '',
-          confirmPassword: ''
-        });
+      // Cambiar a login después de 2 segundos
+      setTimeout(() => {
+        setCurrentPage('login');
+        setRegisterSuccess(false);
+      }, 2000);
+    } else {
+      // Error del servidor
+      const errorText = await response.text();
+      let errorMessage = 'Error en el registro';
 
-        // Cambiar a login después de registro exitoso
-        setTimeout(() => {
-          setCurrentPage('login');
-          setRegisterSuccess(false);
-        }, 2000);
-        
-      } else {
-        // Error del servidor
-        const errorText = await response.text();
-        let errorMessage = 'Error en el registro';
-        
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.message || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        
-        setRegisterError(errorMessage);
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
       }
-    } catch (error) {
-      setRegisterError('Error de conexión. Por favor, verifica que el servidor esté funcionando.');
-      console.error('Error de registro:', error);
-    } finally {
-      setRegisterLoading(false);
+
+      setRegisterError(errorMessage);
     }
-  };
+  } catch (error) {
+    setRegisterError('Error de conexión. Por favor, verifica que el servidor esté funcionando.');
+    console.error('Error de registro:', error);
+  } finally {
+    setRegisterLoading(false);
+  }
+};
 
   return currentPage === 'login' ? (
     <LoginPage 
