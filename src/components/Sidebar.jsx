@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom';
-import { FaHome, FaBox, FaShoppingCart, FaChartBar, FaCog, FaHistory, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaBox, FaShoppingCart, FaChartBar, FaCog, FaHistory, FaSignOutAlt, FaUsers } from 'react-icons/fa';
 
 function Sidebar({ onLogout }) {
+  const roles = JSON.parse(localStorage.getItem('roles') || '[]');
+  const isAdmin = roles.includes('Admin');
+  const isColaborador = roles.includes('Colaborador');
+  const isVendedor = roles.includes('Vendedor');
+
   const handleLogout = () => {
     if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
       onLogout();
@@ -18,36 +23,54 @@ function Sidebar({ onLogout }) {
         >
           <FaHome className="w-5 h-5" /> Inicio
         </Link>
-        <Link
-          to="/productos"
-          className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
-        >
-          <FaBox className="w-5 h-5" /> Productos
-        </Link>
-        <Link
-          to="/ventas"
-          className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
-        >
-          <FaShoppingCart className="w-5 h-5" /> Ventas
-        </Link>
-        <Link
-          to="/movimientos"
-          className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
-        >
-          <FaHistory className="w-5 h-5" /> Movimientos
-        </Link>
-        <Link
-          to="/parametros"
-          className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
-        >
-          <FaCog className="w-5 h-5" /> Parámetros
-        </Link>
-        <Link
-          to="/reportes"
-          className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
-        >
-          <FaChartBar className="w-5 h-5" /> Reportes
-        </Link>
+        {(isAdmin || isColaborador) && (
+          <Link
+            to="/productos"
+            className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
+          >
+            <FaBox className="w-5 h-5" /> Productos
+          </Link>
+        )}
+        {(isAdmin || isColaborador || isVendedor) && (
+          <Link
+            to="/ventas"
+            className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
+          >
+            <FaShoppingCart className="w-5 h-5" /> Ventas
+          </Link>
+        )}
+        {(isAdmin || isColaborador || isVendedor) && (
+          <Link
+            to="/movimientos"
+            className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
+          >
+            <FaHistory className="w-5 h-5" /> Movimientos
+          </Link>
+        )}
+        {(isAdmin || isColaborador) && (
+          <Link
+            to="/parametros"
+            className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
+          >
+            <FaCog className="w-5 h-5" /> Parámetros
+          </Link>
+        )}
+        {(isAdmin || isColaborador || isVendedor) && (
+          <Link
+            to="/reportes"
+            className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
+          >
+            <FaChartBar className="w-5 h-5" /> Reportes
+          </Link>
+        )}
+        {isAdmin && (
+          <Link
+            to="/usuarios"
+            className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-lg transition-colors text-gray-200 hover:text-white"
+          >
+            <FaUsers className="w-5 h-5" /> Usuarios
+          </Link>
+        )}
       </nav>
       <div className="mt-auto pt-4 border-t border-gray-700">
         <button

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import AuthPages from './pages/AuthPages'; // Tu componente de login/registro
+import AuthPages from './pages/AuthPages';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import Productos from './pages/Productos';
@@ -10,93 +10,70 @@ import VentaDetalle from './pages/VentaDetalle';
 import Movimientos from './pages/Movimientos';
 import Parametros from './pages/Parametros';
 import Reportes from './pages/Reportes';
+import UserManagement from './pages/UserManagement';
+import ErrorBoundary from './components/ErrorBoundary';
 
-// Hook personalizado para manejar la autenticación
 const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
-    // Verificar si hay un token válido al cargar la aplicación
     const checkAuth = () => {
-      const token = sessionStorage.getItem('authToken');
-      const expiration = sessionStorage.getItem('tokenExpiration');
-      
-      if (token && expiration) {
-        const expirationDate = new Date(expiration);
-        const now = new Date();
-        
-        if (expirationDate > now) {
-          setIsAuthenticated(true);
-        } else {
-          // Token expirado, limpiar storage
-          sessionStorage.clear();
-          setIsAuthenticated(false);
-        }
+      const token = localStorage.getItem('token');
+      const rolesStored = JSON.parse(localStorage.getItem('roles') || '[]');
+      console.log('Token:', token);
+      console.log('Roles:', rolesStored);
+
+      if (token) {
+        setIsAuthenticated(true);
+        setRoles(rolesStored);
       } else {
         setIsAuthenticated(false);
+        setRoles([]);
       }
-      
       setIsLoading(false);
     };
 
     checkAuth();
-
-    // Listener para cambios en sessionStorage (útil para múltiples pestañas)
-    const handleStorageChange = (e) => {
-      if (e.key === 'authToken') {
-        checkAuth();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
   }, []);
 
   const login = (tokenData) => {
-    sessionStorage.setItem('authToken', tokenData.token);
-    sessionStorage.setItem('tokenExpiration', tokenData.expiration);
-    if (tokenData.userName) {
-      sessionStorage.setItem('userName', tokenData.userName);
-    }
-    if (tokenData.roles) {
-      sessionStorage.setItem('userRoles', JSON.stringify(tokenData.roles));
-    }
+    localStorage.setItem('token', tokenData.token);
+    localStorage.setItem('userName', tokenData.userName);
+    localStorage.setItem('roles', JSON.stringify(tokenData.roles));
+    console.log('Login roles:', tokenData.roles);
     setIsAuthenticated(true);
+    setRoles(tokenData.roles);
   };
 
   const logout = () => {
-    sessionStorage.clear();
+    localStorage.clear();
     setIsAuthenticated(false);
+    setRoles([]);
   };
 
-  return { isAuthenticated, isLoading, login, logout };
+  return { isAuthenticated, isLoading, roles, login, logout };
 };
 
-// Componente para proteger rutas
-const ProtectedRoute = ({ children, isAuthenticated }) => {
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+const ProtectedRoute = ({ children, allowedRoles, userRoles, isAuthenticated }) => {
+  const isAllowed = allowedRoles.some(role => userRoles.includes(role));
+  console.log('ProtectedRoute - Allowed Roles:', allowedRoles, 'User Roles:', userRoles, 'Is Allowed:', isAllowed, 'Is Authenticated:', isAuthenticated);
+  return isAuthenticated && isAllowed ? children : <Navigate to="/login" replace />;
 };
 
-// Layout del Dashboard
 const DashboardLayout = ({ children, onLogout }) => {
   return (
     <div className="flex">
       <Sidebar onLogout={onLogout} />
-      <main className="flex-1">
-        {children}
-      </main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 };
 
 function App() {
-  const { isAuthenticated, isLoading, login, logout } = useAuth();
+  const { isAuthenticated, isLoading, roles, login, logout } = useAuth();
 
-  // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -109,26 +86,70 @@ function App() {
     <BrowserRouter>
       <div className="App">
         <Toaster position="top-right" />
-        
         {!isAuthenticated ? (
-          // Mostrar solo las páginas de autenticación
           <Routes>
-            <Route 
-              path="*" 
-              element={<AuthPages onLogin={login} />} 
-            />
+            <Route path="*" element={<AuthPages onLogin={login} />} />
           </Routes>
         ) : (
-          // Mostrar el dashboard con rutas protegidas
           <DashboardLayout onLogout={logout}>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/productos" element={<Productos />} />
-              <Route path="/ventas" element={<Ventas />} />
-              <Route path="/ventas/:id" element={<VentaDetalle />} />
-              <Route path="/movimientos" element={<Movimientos />} />
-              <Route path="/parametros" element={<Parametros />} />
-              <Route path="/reportes" element={<Reportes />} />
+              <Route path="/" element={<ErrorBoundary><Home /></ErrorBoundary>} />
+              <Route
+                path="/productos"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><Productos /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ventas"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><Ventas /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ventas/:id"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><VentaDetalle /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/movimientos"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><Movimientos /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/parametros"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><Parametros /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reportes"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><Reportes /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/usuarios"
+                element={
+                  <ProtectedRoute allowedRoles={['Admin']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                    <ErrorBoundary><UserManagement /></ErrorBoundary>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </DashboardLayout>

@@ -4,11 +4,14 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import VentaForm from '../components/VentaForm';
 import { FaPlus } from 'react-icons/fa';
+import Pagination from '../components/Pagination';
 
 function Ventas() {
   const [ventas, setVentas] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchVentas = useCallback(() => {
     setIsLoading(true);
@@ -26,6 +29,11 @@ function Ventas() {
   useEffect(() => {
     fetchVentas();
   }, [fetchVentas]);
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentVentas = ventas.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="ml-64 p-8">
@@ -51,51 +59,59 @@ function Ventas() {
             No hay ventas
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
-                  <th className="p-4 rounded-tl-lg min-w-[120px]">
-                    Número Factura
-                  </th>
-                  <th className="p-4 min-w-[120px]">Fecha</th>
-                  <th className="p-4 min-w-[120px]">Método Pago</th>
-                  <th className="p-4 text-right min-w-[120px]">Total</th>
-                  <th className="p-4 min-w-[120px]">Estado</th>
-                  <th className="p-4 rounded-tr-lg min-w-[100px]">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ventas.map((venta, index) => (
-                  <tr
-                    key={venta.ventaId}
-                    className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    }`}
-                  >
-                    <td className="p-4 font-medium text-gray-800">
-                      {venta.numeroFactura || '-'}
-                    </td>
-                    <td className="p-4 text-gray-800">
-                      {venta.fechaVenta
-                        ? new Date(venta.fechaVenta).toLocaleDateString()
-                        : '-'}
-                    </td>
-                    <td className="p-4 text-gray-800">{venta.metodoPago || '-'}</td>
-                    <td className="p-4 text-right text-gray-800">
-                      ${venta.total?.toFixed(2) || '0.00'}
-                    </td>
-                    <td className="p-4 text-gray-800">{venta.estadoVenta || '-'}</td>
-                    <td className="p-4">
-                      <Link to={`/ventas/${venta.ventaId}`} className="text-blue-500">
-                        Ver Detalles
-                      </Link>
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
+                    <th className="p-4 rounded-tl-lg min-w-[120px]">
+                      Número Factura
+                    </th>
+                    <th className="p-4 min-w-[120px]">Fecha</th>
+                    <th className="p-4 min-w-[120px]">Método Pago</th>
+                    <th className="p-4 text-right min-w-[120px]">Total</th>
+                    <th className="p-4 min-w-[120px]">Estado</th>
+                    <th className="p-4 rounded-tr-lg min-w-[100px]">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {currentVentas.map((venta, index) => (
+                    <tr
+                      key={venta.ventaId}
+                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      }`}
+                    >
+                      <td className="p-4 font-medium text-gray-800">
+                        {venta.numeroFactura || '-'}
+                      </td>
+                      <td className="p-4 text-gray-800">
+                        {venta.fechaVenta
+                          ? new Date(venta.fechaVenta).toLocaleDateString()
+                          : '-'}
+                      </td>
+                      <td className="p-4 text-gray-800">{venta.metodoPago || '-'}</td>
+                      <td className="p-4 text-right text-gray-800">
+                        ${venta.total?.toFixed(2) || '0.00'}
+                      </td>
+                      <td className="p-4 text-gray-800">{venta.estadoVenta || '-'}</td>
+                      <td className="p-4">
+                        <Link to={`/ventas/${venta.ventaId}`} className="text-blue-500">
+                          Ver Detalles
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={ventas.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
       </div>
       {showModal && (

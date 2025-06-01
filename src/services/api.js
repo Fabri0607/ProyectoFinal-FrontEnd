@@ -5,7 +5,6 @@ const api = axios.create({
   baseURL: 'http://localhost:5151/api',
 });
 
-// Add a request interceptor to include the token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -14,21 +13,21 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data || error.message || 'Error en la solicitud';
-    toast.error(`Error: ${message}`);
-    // Handle token expiration or unauthorized access
+    const message = error.response?.data?.message || error.message || 'Error en la solicitud';
     if (error.response?.status === 401) {
-      // Optionally, clear token and redirect to login
-      localStorage.removeItem('token');
-      window.location.href = '/login'; // Adjust based on your routing
+      toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      localStorage.clear();
+      window.location.href = '/login';
+    } else if (error.response?.status === 403) {
+      toast.error('No tienes permiso para realizar esta acción.');
+    } else {
+      toast.error(`Error: ${message}`);
     }
     return Promise.reject(error);
   }

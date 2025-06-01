@@ -3,13 +3,22 @@ import { Link } from 'react-router-dom';
 import { FaExclamationTriangle, FaBox, FaShoppingCart } from 'react-icons/fa';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../components/Pagination';
 
 function Home() {
   const [stockBajo, setStockBajo] = useState([]);
   const [ventasHoy, setVentasHoy] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [userRoles, setUserRoles] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
+    // Load roles from localStorage
+    const rolesStored = JSON.parse(localStorage.getItem('roles') || '[]');
+    console.log('Roles:', rolesStored); // Debug log
+    setUserRoles(rolesStored);
+
     const fetchData = async () => {
       try {
         // Generar fechas en CST
@@ -23,8 +32,9 @@ function Home() {
           api.get('/Reporte/StockBajo'),
           api.get(`/Reporte/Ventas?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`),
         ]);
+
         setStockBajo(stockRes.data);
-        console.log('Ventas Response:', ventasRes.data); // Log para depuración
+        console.log('Ventas Response:', ventasRes.data); // Corrected log
         setVentasHoy(ventasRes.data.totalVentas || 0);
       } catch (error) {
         if (error.response?.config.url.includes('StockBajo')) {
@@ -38,6 +48,14 @@ function Home() {
     };
     fetchData();
   }, []);
+
+  // Verificar si el usuario tiene permisos de Admin o Colaborador
+  const hasProductosPermission = userRoles.includes('Admin') || userRoles.includes('Colaborador');
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStockBajo = stockBajo.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="ml-64 p-8 bg-gray-50 min-h-screen">
@@ -56,17 +74,19 @@ function Home() {
             <Card
               icon={<FaExclamationTriangle size={24} />}
               title="Stock Bajo"
-               value={stockBajo.length}
+              value={stockBajo.length}
               color="yellow"
             />
-            <Link to="/productos">
-              <Card
-                icon={<FaBox size={24} />}
-                title="Productos"
-                value="Ver todos"
-                color="blue"
-              />
-            </Link>
+            {hasProductosPermission && (
+              <Link to="/productos">
+                <Card
+                  icon={<FaBox size={24} />}
+                  title="Productos"
+                  value="Ver todos"
+                  color="blue"
+                />
+              </Link>
+            )}
             <Link to="/ventas">
               <Card
                 icon={<FaShoppingCart size={24} />}
@@ -86,53 +106,61 @@ function Home() {
                 No hay productos con stock bajo
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
-                      <th className="p-4 rounded-tl-lg min-w-[100px]">Código</th>
-                      <th className="p-4 min-w-[150px]">Producto</th>
-                      <th className="p-4 text-right min-w-[120px]">Stock Actual</th>
-                      <th className="p-4 text-right min-w-[120px]">Stock Mínimo</th>
-                      <th className="p-4 text-right rounded-tr-lg min-w-[120px]">
-                        Diferencia
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stockBajo.map((producto, index) => (
-                      <tr
-                        key={producto.productoId}
-                        className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                        }`}
-                      >
-                        <td className="p-4 font-medium text-gray-800">
-                          {producto.codigo || '-'}
-                        </td>
-                        <td className="p-4 font-medium text-gray-800">
-                          {producto.nombre || '-'}
-                        </td>
-                        <td className="p-4 text-right text-gray-800">
-                          {producto.stockActual ?? 0}
-                        </td>
-                        <td className="p-4 text-right text-gray-800">
-                          {producto.stockMinimo ?? 0}
-                        </td>
-                        <td
-                          className={`p-4 text-right ${
-                            producto.diferenciaBajo < 0
-                              ? 'text-red-500'
-                              : 'text-gray-800'
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
+                        <th className="p-4 rounded-tl-lg min-w-[100px]">Código</th>
+                        <th className="p-4 min-w-[150px]">Producto</th>
+                        <th className="p-4 text-right min-w-[120px]">Stock Actual</th>
+                        <th className="p-4 text-right min-w-[120px]">Stock Mínimo</th>
+                        <th className="p-4 text-right rounded-tr-lg min-w-[120px]">
+                          Diferencia
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentStockBajo.map((producto, index) => (
+                        <tr
+                          key={producto.productoId}
+                          className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                           }`}
                         >
-                          {producto.diferenciaBajo ?? 0}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          <td className="p-4 font-medium text-gray-800">
+                            {producto.codigo || 'N/A'}
+                          </td>
+                          <td className="p-4 font-medium text-gray-800">
+                            {producto.nombre || 'N/A'}
+                          </td>
+                          <td className="p-4 text-right text-gray-800">
+                            {producto.stockActual ?? 0}
+                          </td>
+                          <td className="p-4 text-right text-gray-800">
+                            {producto.stockMinimo ?? 0}
+                          </td>
+                          <td
+                            className={`p-4 text-right ${
+                              producto.diferenciaBajo < 0
+                                ? 'text-red-500'
+                                : 'text-gray-800'
+                            }`}
+                          >
+                            {producto.diferenciaBajo ?? 0}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={stockBajo.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                />
+              </>
             )}
           </section>
         </>
