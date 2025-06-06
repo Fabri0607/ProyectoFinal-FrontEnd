@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import ProductoForm from '../components/ProductoForm';
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import Pagination from '../components/Pagination';
+import { formatCurrency } from '../utils/formatCurrency';
 
 function Productos() {
   const [productos, setProductos] = useState([]);
@@ -11,6 +12,7 @@ function Productos() {
   const [editProducto, setEditProducto] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc', 'none'
   const itemsPerPage = 10;
 
   const fetchProductos = useCallback(() => {
@@ -31,7 +33,7 @@ function Productos() {
     if (window.confirm('¿Eliminar producto?')) {
       api.delete(`/Producto/${id}`)
         .then(() => {
-          setProductos(productos.filter(p => p.productoId !== id));
+          setProductos(productos.filter(p => (p.productoId || p.ProductoId) !== id));
           toast.success('Producto eliminado');
           fetchProductos();
         })
@@ -49,10 +51,49 @@ function Productos() {
     }
   };
 
-  // Pagination logic
+  const handleSort = () => {
+    if (sortOrder === 'none') {
+      setSortOrder('asc');
+    } else if (sortOrder === 'asc') {
+      setSortOrder('desc');
+    } else {
+      setSortOrder('none');
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const getSortedProductos = () => {
+    if (sortOrder === 'none') {
+      return productos;
+    }
+    
+    return [...productos].sort((a, b) => {
+      const codigoA = (a.codigo || a.Codigo || '').toString().toLowerCase();
+      const codigoB = (b.codigo || b.Codigo || '').toString().toLowerCase();
+      
+      if (sortOrder === 'asc') {
+        return codigoA.localeCompare(codigoB);
+      } else {
+        return codigoB.localeCompare(codigoA);
+      }
+    });
+  };
+
+  const getSortIcon = () => {
+    switch (sortOrder) {
+      case 'asc':
+        return <FaSortUp className="inline ml-1" />;
+      case 'desc':
+        return <FaSortDown className="inline ml-1" />;
+      default:
+        return <FaSort className="inline ml-1" />;
+    }
+  };
+
+  const sortedProductos = getSortedProductos();
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProductos = productos.slice(indexOfFirstItem, indexOfLastItem);
+  const currentProductos = sortedProductos.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="ml-64 p-8">
@@ -86,7 +127,16 @@ function Productos() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-blue-50 text-gray-800 font-semibold border-b border-gray-200">
-                    <th className="p-4 rounded-tl-lg min-w-[100px]">Código</th>
+                    <th className="p-4 rounded-tl-lg min-w-[100px]">
+                      <button
+                        onClick={handleSort}
+                        className="flex items-center hover:text-blue-600 transition-colors"
+                        title="Ordenar por código"
+                      >
+                        Código
+                        {getSortIcon()}
+                      </button>
+                    </th>
                     <th className="p-4 min-w-[150px]">Nombre</th>
                     <th className="p-4 text-right min-w-[120px]">Precio Venta</th>
                     <th className="p-4 text-right min-w-[120px]">Stock</th>
@@ -98,19 +148,19 @@ function Productos() {
                 <tbody>
                   {currentProductos.map((producto, index) => (
                     <tr
-                      key={producto.productoId}
+                      key={producto.productoId || producto.ProductoId}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       }`}
                     >
                       <td className="p-4 font-medium text-gray-800">
-                        {producto.codigo || '-'}
+                        {producto.codigo || producto.Codigo || '-'}
                       </td>
                       <td className="p-4 font-medium text-gray-800">
-                        {producto.nombre || '-'}
+                        {producto.nombre || producto.Nombre || '-'}
                       </td>
                       <td className="p-4 text-right text-gray-800">
-                        ${producto.precioVenta?.toFixed(2) || '0.00'}
+                        {formatCurrency(producto.precioVenta || producto.PrecioVenta || 0)}
                       </td>
                       <td className="p-4 text-right text-gray-800">
                         {producto.stock ?? 0}
@@ -119,7 +169,7 @@ function Productos() {
                         {producto.stockMinimo ?? 0}
                       </td>
                       <td className="p-4 text-gray-800">
-                        {producto.activo ? 'Sí' : 'No'}
+                        {(producto.activo || producto.Activo) ? 'Sí' : 'No'}
                       </td>
                       <td className="p-4">
                         <button
@@ -132,7 +182,7 @@ function Productos() {
                           <FaEdit />
                         </button>
                         <button
-                          onClick={() => handleDelete(producto.productoId)}
+                          onClick={() => handleDelete(producto.productoId || producto.ProductoId)}
                           className="text-red-500"
                         >
                           <FaTrash />
@@ -145,7 +195,7 @@ function Productos() {
             </div>
             <Pagination
               currentPage={currentPage}
-              totalItems={productos.length}
+              totalItems={sortedProductos.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
             />
@@ -160,7 +210,7 @@ function Productos() {
             setProductos(
               editProducto
                 ? productos.map(p =>
-                    p.productoId === newProducto.productoId ? newProducto : p
+                    (p.productoId || p.ProductoId) === (newProducto.productoId || newProducto.ProductoId) ? newProducto : p
                   )
                 : [...productos, newProducto]
             );

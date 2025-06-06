@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import VentaForm from '../components/VentaForm';
 import { FaPlus } from 'react-icons/fa';
 import Pagination from '../components/Pagination';
+import { formatCurrency } from '../utils/formatCurrency';
 
 function Ventas() {
   const [ventas, setVentas] = useState([]);
@@ -18,7 +19,7 @@ function Ventas() {
     api.get('/Venta')
       .then(res => {
         const sortedVentas = res.data.sort((a, b) =>
-          b.numeroFactura.localeCompare(a.numeroFactura)
+          (b.numeroFactura || b.NumeroFactura).localeCompare(a.numeroFactura || a.NumeroFactura)
         );
         setVentas(sortedVentas);
       })
@@ -30,7 +31,6 @@ function Ventas() {
     fetchVentas();
   }, [fetchVentas]);
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentVentas = ventas.slice(indexOfFirstItem, indexOfLastItem);
@@ -77,26 +77,26 @@ function Ventas() {
                 <tbody>
                   {currentVentas.map((venta, index) => (
                     <tr
-                      key={venta.ventaId}
+                      key={venta.ventaId || venta.VentaId}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       }`}
                     >
                       <td className="p-4 font-medium text-gray-800">
-                        {venta.numeroFactura || '-'}
+                        {venta.numeroFactura || venta.NumeroFactura || '-'}
                       </td>
                       <td className="p-4 text-gray-800">
-                        {venta.fechaVenta
-                          ? new Date(venta.fechaVenta).toLocaleDateString()
+                        {(venta.fechaVenta || venta.FechaVenta)
+                          ? new Date(venta.fechaVenta || venta.FechaVenta).toLocaleDateString('es-CR')
                           : '-'}
                       </td>
-                      <td className="p-4 text-gray-800">{venta.metodoPago || '-'}</td>
+                      <td className="p-4 text-gray-800">{venta.metodoPago || venta.MetodoPago || '-'}</td>
                       <td className="p-4 text-right text-gray-800">
-                        ${venta.total?.toFixed(2) || '0.00'}
+                        {formatCurrency(venta.total || venta.Total || 0)}
                       </td>
-                      <td className="p-4 text-gray-800">{venta.estadoVenta || '-'}</td>
+                      <td className="p-4 text-gray-800">{venta.estadoVenta || venta.EstadoVenta || '-'}</td>
                       <td className="p-4">
-                        <Link to={`/ventas/${venta.ventaId}`} className="text-blue-500">
+                        <Link to={`/ventas/${venta.ventaId || venta.VentaId}`} className="text-blue-500">
                           Ver Detalles
                         </Link>
                       </td>

@@ -71,12 +71,14 @@ function Home() {
       ) : (
         <>
           <section className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-            <Card
-              icon={<FaExclamationTriangle size={24} />}
-              title="Stock Bajo"
-              value={stockBajo.length}
-              color="yellow"
-            />
+            <Link to="/reportes?tab=inventario">
+              <Card
+                icon={<FaExclamationTriangle size={24} />}
+                title="Stock Bajo"
+                value={stockBajo.length}
+                color="yellow"
+              />
+            </Link>
             {hasProductosPermission && (
               <Link to="/productos">
                 <Card
@@ -124,9 +126,8 @@ function Home() {
                       {currentStockBajo.map((producto, index) => (
                         <tr
                           key={producto.productoId}
-                          className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                          }`}
+                          className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                            }`}
                         >
                           <td className="p-4 font-medium text-gray-800">
                             {producto.codigo || 'N/A'}
@@ -141,13 +142,12 @@ function Home() {
                             {producto.stockMinimo ?? 0}
                           </td>
                           <td
-                            className={`p-4 text-right ${
-                              producto.diferenciaBajo < 0
-                                ? 'text-red-500'
-                                : 'text-gray-800'
-                            }`}
+                            className={`p-4 text-right ${(producto.stockActual - producto.stockMinimo) < 0
+                              ? 'text-red-500'
+                              : 'text-gray-800'
+                              }`}
                           >
-                            {producto.diferenciaBajo ?? 0}
+                            {(producto.stockActual - producto.stockMinimo) ?? 0}
                           </td>
                         </tr>
                       ))}

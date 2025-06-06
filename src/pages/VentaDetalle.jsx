@@ -4,6 +4,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
 import Pagination from '../components/Pagination';
+import { formatCurrency } from '../utils/formatCurrency';
 
 function VentaDetalle() {
   const { id } = useParams();
@@ -17,7 +18,6 @@ function VentaDetalle() {
       .catch(() => toast.error('Error al cargar detalles de venta'));
   }, [id]);
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentDetalles = detalles.slice(indexOfFirstItem, indexOfLastItem);
@@ -59,25 +59,25 @@ function VentaDetalle() {
                 <tbody>
                   {currentDetalles.map((detalle, index) => (
                     <tr
-                      key={detalle.detalleVentaId}
+                      key={detalle.detalleVentaId || detalle.DetalleVentaId}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       }`}
                     >
                       <td className="p-4 font-medium text-gray-800">
-                        {detalle.producto?.nombre || 'N/A'}
+                        {(detalle.producto?.nombre || detalle.producto?.Nombre) || 'N/A'}
                       </td>
                       <td className="p-4 text-right text-gray-800">
-                        {detalle.cantidad || '-'}
+                        {detalle.cantidad || detalle.Cantidad || '-'}
                       </td>
                       <td className="p-4 text-right text-gray-800">
-                        ${detalle.precioUnitario?.toFixed(2) || '0.00'}
+                        {formatCurrency(detalle.precioUnitario || detalle.PrecioUnitario || 0)}
                       </td>
                       <td className="p-4 text-right text-gray-800">
-                        ${detalle.descuento?.toFixed(2) || '0.00'}
+                        {formatCurrency(detalle.descuento || detalle.Descuento || 0)}
                       </td>
                       <td className="p-4 text-right text-gray-800">
-                        ${detalle.subtotal?.toFixed(2) || '0.00'}
+                        {formatCurrency(detalle.subtotal || detalle.Subtotal || 0)}
                       </td>
                     </tr>
                   ))}
