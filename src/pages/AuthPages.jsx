@@ -24,7 +24,6 @@ const AuthPages = ({ onLogin }) => {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
-
   const API_BASE_URL = 'http://localhost:5151/api';
 
   const handleLoginChange = (e) => {
@@ -41,7 +40,7 @@ const AuthPages = ({ onLogin }) => {
     setLoginSuccess(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/Auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/Auth/Login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,24 +53,35 @@ const AuthPages = ({ onLogin }) => {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Debug: Verificar qué datos está devolviendo el backend
+        console.log('Datos del servidor:', data);
+        
         localStorage.setItem('token', data.token.token);
         localStorage.setItem('userName', data.userName);
         localStorage.setItem('roles', JSON.stringify(data.roles));
 
         setLoginSuccess(true);
 
+        // Pasar TODOS los datos al componente padre, incluyendo mustChangePassword
         if (onLogin && data.token) {
-          onLogin({
+          const userData = {
             token: data.token.token,
             expiration: data.token.expiration,
             userName: data.userName,
-            roles: data.roles
-          });
+            roles: data.roles,
+            mustChangePassword: data.mustChangePassword || false // <-- IMPORTANTE: Incluir este campo
+          };
+          
+          console.log('Datos enviados a onLogin:', userData);
+          onLogin(userData);
         }
 
+        // Remover la navegación manual ya que App.jsx se encarga de esto
         setTimeout(() => {
           setLoginSuccess(false);
-        }, 2000);
+          // El App.jsx se encargará de redirigir según mustChangePassword
+        }, 1500);
       } else {
         const errorText = await response.text();
         let errorMessage = 'Error en el inicio de sesión';

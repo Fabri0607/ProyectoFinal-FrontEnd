@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AuthPages from './pages/AuthPages';
+import ChangePassword from './pages/ChangePassword'; // Necesitarás crear este componente
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import Productos from './pages/Productos';
@@ -17,20 +18,26 @@ const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [roles, setRoles] = useState([]);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       const rolesStored = JSON.parse(localStorage.getItem('roles') || '[]');
+      const mustChange = JSON.parse(sessionStorage.getItem('mustChangePassword') || 'false');
+      
       console.log('Token:', token);
       console.log('Roles:', rolesStored);
+      console.log('Must change password:', mustChange);
 
       if (token) {
         setIsAuthenticated(true);
         setRoles(rolesStored);
+        setMustChangePassword(mustChange);
       } else {
         setIsAuthenticated(false);
         setRoles([]);
+        setMustChangePassword(false);
       }
       setIsLoading(false);
     };
@@ -42,23 +49,52 @@ const useAuth = () => {
     localStorage.setItem('token', tokenData.token);
     localStorage.setItem('userName', tokenData.userName);
     localStorage.setItem('roles', JSON.stringify(tokenData.roles));
+    
+    // Guardar el estado de cambio obligatorio de contraseña
+    const mustChange = tokenData.mustChangePassword || false;
+    sessionStorage.setItem('mustChangePassword', JSON.stringify(mustChange));
+    
     console.log('Login roles:', tokenData.roles);
+    console.log('Must change password:', mustChange);
+    
     setIsAuthenticated(true);
     setRoles(tokenData.roles);
+    setMustChangePassword(mustChange);
   };
 
   const logout = () => {
     localStorage.clear();
+    sessionStorage.clear();
     setIsAuthenticated(false);
     setRoles([]);
+    setMustChangePassword(false);
   };
 
-  return { isAuthenticated, isLoading, roles, login, logout };
+  const passwordChanged = () => {
+    sessionStorage.setItem('mustChangePassword', 'false');
+    setMustChangePassword(false);
+  };
+
+  return { 
+    isAuthenticated, 
+    isLoading, 
+    roles, 
+    mustChangePassword, 
+    login, 
+    logout, 
+    passwordChanged 
+  };
 };
 
-const ProtectedRoute = ({ children, allowedRoles, userRoles, isAuthenticated }) => {
+const ProtectedRoute = ({ children, allowedRoles, userRoles, isAuthenticated, mustChangePassword }) => {
+  // Si el usuario debe cambiar la contraseña, redirigir a change-password
+  if (isAuthenticated && mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   const isAllowed = allowedRoles.some(role => userRoles.includes(role));
   console.log('ProtectedRoute - Allowed Roles:', allowedRoles, 'User Roles:', userRoles, 'Is Allowed:', isAllowed, 'Is Authenticated:', isAuthenticated);
+  
   return isAuthenticated && isAllowed ? children : <Navigate to="/login" replace />;
 };
 
@@ -72,7 +108,15 @@ const DashboardLayout = ({ children, onLogout }) => {
 };
 
 function App() {
-  const { isAuthenticated, isLoading, roles, login, logout } = useAuth();
+  const { 
+    isAuthenticated, 
+    isLoading, 
+    roles, 
+    mustChangePassword, 
+    login, 
+    logout, 
+    passwordChanged 
+  } = useAuth();
 
   if (isLoading) {
     return (
@@ -90,6 +134,15 @@ function App() {
           <Routes>
             <Route path="*" element={<AuthPages onLogin={login} />} />
           </Routes>
+        ) : mustChangePassword ? (
+          // Si el usuario debe cambiar la contraseña, solo mostrar esa página
+          <Routes>
+            <Route 
+              path="/change-password" 
+              element={<ChangePassword onPasswordChanged={passwordChanged} />} 
+            />
+            <Route path="*" element={<Navigate to="/change-password" replace />} />
+          </Routes>
         ) : (
           <DashboardLayout onLogout={logout}>
             <Routes>
@@ -97,7 +150,12 @@ function App() {
               <Route
                 path="/productos"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin', 'Colaborador']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><Productos /></ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -105,7 +163,12 @@ function App() {
               <Route
                 path="/ventas"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin', 'Colaborador', 'Vendedor']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><Ventas /></ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -113,7 +176,12 @@ function App() {
               <Route
                 path="/ventas/:id"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin', 'Colaborador', 'Vendedor']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><VentaDetalle /></ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -121,7 +189,12 @@ function App() {
               <Route
                 path="/movimientos"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin', 'Colaborador', 'Vendedor']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><Movimientos /></ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -129,7 +202,12 @@ function App() {
               <Route
                 path="/parametros"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin', 'Colaborador']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><Parametros /></ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -137,7 +215,12 @@ function App() {
               <Route
                 path="/reportes"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin', 'Colaborador', 'Vendedor']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin', 'Colaborador', 'Vendedor']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><Reportes /></ErrorBoundary>
                   </ProtectedRoute>
                 }
@@ -145,7 +228,12 @@ function App() {
               <Route
                 path="/usuarios"
                 element={
-                  <ProtectedRoute allowedRoles={['Admin']} userRoles={roles} isAuthenticated={isAuthenticated}>
+                  <ProtectedRoute 
+                    allowedRoles={['Admin']} 
+                    userRoles={roles} 
+                    isAuthenticated={isAuthenticated}
+                    mustChangePassword={mustChangePassword}
+                  >
                     <ErrorBoundary><UserManagement /></ErrorBoundary>
                   </ProtectedRoute>
                 }
