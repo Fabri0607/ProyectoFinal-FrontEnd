@@ -162,20 +162,6 @@ const AuthPages = ({ onLogin }) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <label className="flex items-center">
-              <input 
-                type="checkbox" 
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                disabled={loginLoading}
-              />
-              <span className="ml-2 text-sm text-gray-600">Recordarme</span>
-            </label>
-            <a href="#" className="text-sm text-blue-600 hover:text-blue-800">
-              ¿Olvidaste tu contraseña?
-            </a>
-          </div>
-
           <button
             type="button"
             onClick={handleLoginSubmit}
