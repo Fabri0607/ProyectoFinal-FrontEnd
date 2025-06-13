@@ -18,16 +18,43 @@ const SuccessMessage = ({ message }) => (
   </div>
 );
 
+// Function to generate a secure random password
+const generateSecurePassword = () => {
+  const length = 12;
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+  let password = '';
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(array[i] % charset.length);
+  }
+  
+  // Ensure at least one of each required character type
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*()]/.test(password);
+  
+  if (!(hasUpper && hasLower && hasNumber && hasSpecial)) {
+    return generateSecurePassword(); // Recursively try again if requirements not met
+  }
+  
+  return password;
+};
+
 const EditUserModal = ({ user, onClose, onSave }) => {
   const [editUser, setEditUser] = useState({
     userName: user.userName,
     email: user.email,
     role: user.role,
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleInputChange = (e) => {
     setEditUser({
@@ -44,11 +71,23 @@ const EditUserModal = ({ user, onClose, onSave }) => {
       return;
     }
 
+    if (editUser.password && editUser.password !== editUser.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      await onSave(user.id, editUser);
+      // Only include password in the payload if it's been set
+      const payload = {
+        userName: editUser.userName,
+        email: editUser.email,
+        role: editUser.role,
+        ...(editUser.password && { password: editUser.password })
+      };
+      await onSave(user.id, payload);
       onClose();
       toast.success('Usuario actualizado exitosamente');
     } catch (error) {
@@ -129,6 +168,28 @@ const EditUserModal = ({ user, onClose, onSave }) => {
               </button>
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Confirmar Contraseña (opcional)</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={editUser.confirmPassword}
+                onChange={handleInputChange}
+                className="w-full p-3 border border-gray-300 rounded-lg pr-12"
+                placeholder="••••••••"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={loading}
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
           <div className="flex space-x-4">
             <button
               type="submit"
@@ -163,14 +224,13 @@ const UserManagement = () => {
   const [newUser, setNewUser] = useState({
     userName: '',
     email: '',
-    password: '',
+    password: generateSecurePassword(), // Generate password automatically
     role: 'Colaborador'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -200,8 +260,8 @@ const UserManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newUser.userName || !newUser.email || !newUser.password || !newUser.role) {
-      setError('Todos los campos son requeridos');
+    if (!newUser.userName || !newUser.email || !newUser.role) {
+      setError('Los campos nombre de usuario, correo y rol son obligatorios');
       return;
     }
 
@@ -212,7 +272,12 @@ const UserManagement = () => {
     try {
       const response = await api.post('/Auth/register', newUser);
       setSuccess(true);
-      setNewUser({ userName: '', email: '', password: '', role: 'Colaborador' });
+      setNewUser({ 
+        userName: '', 
+        email: '', 
+        password: generateSecurePassword(), // Generate new password for next user
+        role: 'Colaborador' 
+      });
       fetchUsers();
       toast.success('Usuario creado exitosamente');
       setTimeout(() => setSuccess(false), 2000);
@@ -292,28 +357,6 @@ const UserManagement = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Contraseña</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={newUser.password}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-lg pr-12"
-                placeholder="••••••••"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                disabled={loading}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-          <div>
             <label className="block text-sm font-medium text-gray-700">Rol</label>
             <select
               name="role"
@@ -376,20 +419,18 @@ const UserManagement = () => {
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       }`}
                     >
-                      <td className="p-4 font-medium text-gray-800">{user.userName}</td>
-                      <td className="p-4 text-gray-800">{user.email}</td>
-                      <td className="p-4 text-gray-800">{user.role}</td>
+                      <td className="p-4 font-medium text-gray-600">{user.userName}</td>
+                      <td className="p-4 text-gray-600">{user.email}</td>
+                      <td className="p-4 text-gray-600">{user.role}</td>
                       <td className="p-4 space-x-2">
                         <button
                           onClick={() => handleEdit(user)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
+                          className="text-blue-600 hover:text-blue-800">
                           <Edit className="w-5 h-5 inline" />
                         </button>
                         <button
-                          onClick={() => handleDelete(user.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
+                          onClick={() => handleDelete(user.id)} 
+                          className="text-red-600 hover:text-red-800">
                           <Trash2 className="w-5 h-5 inline" />
                         </button>
                       </td>
@@ -407,10 +448,9 @@ const UserManagement = () => {
           </>
         )}
       </div>
-
       {/* Modal para editar usuario */}
       {editingUser && (
-        <EditUserModal
+        <EditUserModal 
           user={editingUser}
           onClose={handleCloseEdit}
           onSave={handleSaveEdit}
