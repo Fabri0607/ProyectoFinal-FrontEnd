@@ -96,22 +96,7 @@
     <li>Interfaz en español adaptada al formato monetario local.</li>
     <li>Soporta múltiples usuarios con diferentes niveles de acceso.</li>
   </ul>
-
-  <h2>🛑 Límites del Sistema</h2>
-  <ul>
-    <li>Requiere conexión activa con el backend (<code>localhost:5151</code>).</li>
-    <li>Funciona en navegadores modernos compatibles con ES6+.</li>
-    <li>No incluye:
-      <ul>
-        <li>Implementación del backend.</li>
-        <li>Manejo de base de datos.</li>
-        <li>Servicios de correo o notificaciones.</li>
-        <li>Procesamiento de pagos.</li>
-        <li>Soporte multilenguaje.</li>
-      </ul>
-    </li>
-  </ul>
-
+  
   <h2>🚀 Configuración Inicial</h2>
   <ol>
     <li>Clonar el repositorio.</li>
