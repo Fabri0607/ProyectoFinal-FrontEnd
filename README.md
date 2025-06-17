@@ -81,14 +81,7 @@
     <li>Forzado de cambio de contraseña para usuarios nuevos</li>
     <li>Rutas protegidas según el rol asignado</li>
   </ul>
-
-  <h2>📤 Exportación de Datos</h2>
-  <ul>
-    <li>Exportación de reportes en formatos: Excel, PDF, CSV, y JSON.</li>
-    <li>Funciones reutilizables para exportación y formato de moneda.</li>
-    <li>Integrado con múltiples secciones del sistema.</li>
-  </ul>
-
+  
   <h2>🎯 Usuarios Objetivo y Casos de Uso</h2>
   <ul>
     <li>Empresas PYME en Latinoamérica.</li>
